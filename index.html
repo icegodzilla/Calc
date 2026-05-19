@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scientific Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #090910;
+      --surface: #0f0f1a;
+      --surface2: #13131f;
+      --border: rgba(80,80,200,0.15);
+      --accent: #5555ff;
+      --accent-glow: rgba(80,80,255,0.25);
+      --text: #d0d0f0;
+      --text-dim: #444466;
+      --fn-bg: rgba(30,30,70,0.7);
+      --fn-text: #8888cc;
+      --op-bg: rgba(40,40,110,0.8);
+      --op-text: #aaaaff;
+      --num-bg: rgba(15,15,28,0.9);
+      --num-text: #c8c8e8;
+      --action-bg: rgba(70,30,30,0.7);
+      --action-text: #cc7777;
+      --eq-bg: rgba(60,60,210,0.85);
+      --eq-text: #ffffff;
+      --display-bg: #07070e;
+      --error: #ff4466;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Share Tech Mono', monospace;
+      padding: 20px;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(30,30,100,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(20,20,80,0.1) 0%, transparent 50%);
+    }
+
+    .calculator {
+      width: 340px;
+      background: linear-gradient(145deg, var(--surface2), var(--surface));
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow:
+        0 0 0 1px var(--border),
+        0 40px 80px rgba(0,0,0,0.85),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      border: 1px solid rgba(70,70,180,0.12);
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      font-family: 'Orbitron', monospace;
+      color: var(--text-dim);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .mode-group {
+      display: flex;
+      gap: 5px;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #444466;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 10px;
+      font-family: 'Share Tech Mono', monospace;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: rgba(70,70,200,0.25);
+      border-color: rgba(100,100,255,0.45);
+      color: #8888ff;
+    }
+
+    .display {
+      background: var(--display-bg);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(60,60,180,0.1);
+      min-height: 88px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .display-history {
+      color: var(--text-dim);
+      font-size: 11px;
+      min-height: 16px;
+      margin-bottom: 6px;
+      word-break: break-all;
+      text-align: right;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .display-main {
+      color: var(--text);
+      font-size: 34px;
+      font-weight: 300;
+      letter-spacing: -1px;
+      word-break: break-all;
+      text-align: right;
+      text-shadow: 0 0 18px var(--accent-glow);
+      transition: font-size 0.15s;
+      max-width: 100%;
+    }
+
+    .display-main.small { font-size: 20px; }
+    .display-main.error { color: var(--error); text-shadow: 0 0 18px rgba(255,60,80,0.3); }
+
+    .expr-bar {
+      color: #333355;
+      font-size: 11px;
+      min-height: 14px;
+      text-align: right;
+      margin-bottom: 2px;
+      word-break: break-all;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 7px;
+    }
+
+    .btn {
+      height: 50px;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s, background 0.1s;
+      outline: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active {
+      transform: scale(0.92);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.5) !important;
+    }
+
+    .btn.wide { grid-column: span 2; }
+
+    .btn.fn {
+      background: var(--fn-bg);
+      border-color: rgba(70,70,150,0.2);
+      color: var(--fn-text);
+      font-size: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .btn.fn:hover { background: rgba(50,50,100,0.85); }
+
+    .btn.const {
+      background: var(--fn-bg);
+      border-color: rgba(70,70,150,0.2);
+      color: #aaaaff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .btn.op {
+      background: var(--op-bg);
+      border-color: rgba(90,90,200,0.3);
+      color: var(--op-text);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .btn.op:hover { background: rgba(60,60,150,0.9); }
+
+    .btn.num {
+      background: var(--num-bg);
+      border-color: rgba(50,50,110,0.2);
+      color: var(--num-text);
+      font-size: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .btn.num:hover { background: rgba(25,25,45,0.95); }
+
+    .btn.action {
+      background: var(--action-bg);
+      border-color: rgba(140,60,60,0.2);
+      color: var(--action-text);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .btn.action:hover { background: rgba(100,40,40,0.85); }
+
+    .btn.eq {
+      background: var(--eq-bg);
+      border-color: rgba(110,110,255,0.45);
+      color: var(--eq-text);
+      font-size: 18px;
+      box-shadow: 0 0 18px rgba(70,70,200,0.3), 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .btn.eq:hover { background: rgba(80,80,230,0.9); }
+
+    .footer {
+      text-align: center;
+      margin-top: 14px;
+      color: #1a1a30;
+      font-size: 9px;
+      letter-spacing: 3px;
+    }
+  </style>
+</head>
+<body>
+<div class="calculator">
+  <div class="header">
+    <span class="title">Scientific</span>
+    <div class="mode-group">
+      <button class="mode-btn" id="btn-rad" onclick="setMode('rad')">Rad</button>
+      <button class="mode-btn active" id="btn-deg" onclick="setMode('deg')">Deg</button>
+    </div>
+  </div>
+
+  <div class="display">
+    <div class="display-history" id="history"></div>
+    <div class="expr-bar" id="expr-bar"></div>
+    <div class="display-main" id="display">0</div>
+  </div>
+
+  <div class="grid">
+    <!-- Row 1 -->
+    <button class="btn fn" onclick="pressFn('x!')">x!</button>
+    <button class="btn fn" onclick="pressBracket('(')"> ( </button>
+    <button class="btn fn" onclick="pressBracket(')')"> ) </button>
+    <button class="btn fn" onclick="pressFn('ln')">ln</button>
+    <button class="btn fn" onclick="pressFn('log')">log</button>
+    <!-- Row 2 -->
+    <button class="btn fn" onclick="pressFn('sin')">sin</button>
+    <button class="btn fn" onclick="pressFn('cos')">cos</button>
+    <button class="btn fn" onclick="pressFn('tan')">tan</button>
+    <button class="btn fn" onclick="pressFn('√')">√</button>
+    <button class="btn fn" onclick="pressFn('x²')">x²</button>
+    <!-- Row 3 -->
+    <button class="btn fn" onclick="pressFn('xʸ')">xʸ</button>
+    <button class="btn const" onclick="pressConst('π')">π</button>
+    <button class="btn const" onclick="pressConst('e')">e</button>
+    <button class="btn action" onclick="pressAC()">AC</button>
+    <button class="btn action" onclick="pressSign()">+/-</button>
+    <!-- Row 4 -->
+    <button class="btn action" onclick="pressPercent()">%</button>
+    <button class="btn num" onclick="pressNum('7')">7</button>
+    <button class="btn num" onclick="pressNum('8')">8</button>
+    <button class="btn num" onclick="pressNum('9')">9</button>
+    <button class="btn op" onclick="pressOp('÷')">÷</button>
+    <!-- Row 5 -->
+    <button class="btn num" onclick="pressNum('4')">4</button>
+    <button class="btn num" onclick="pressNum('5')">5</button>
+    <button class="btn num" onclick="pressNum('6')">6</button>
+    <button class="btn op" onclick="pressOp('×')">×</button>
+    <button class="btn num" onclick="pressNum('1')">1</button>
+    <!-- Row 6 -->
+    <button class="btn num" onclick="pressNum('2')">2</button>
+    <button class="btn num" onclick="pressNum('3')">3</button>
+    <button class="btn op" onclick="pressOp('−')">−</button>
+    <button class="btn num wide" onclick="pressNum('0')">0</button>
+    <button class="btn num" onclick="pressDot()">.</button>
+    <!-- Row 7 -->
+    <button class="btn op" onclick="pressOp('+')">+</button>
+    <button class="btn eq wide" onclick="pressEquals()">=</button>
+  </div>
+
+  <div class="footer">CALC · v1.0</div>
+</div>
+
+<script>
+  let display = '0';
+  let expr = '';
+  let isDeg = true;
+  let justEvaled = false;
+  let history = '';
+
+  function factorial(n) {
+    n = Math.floor(n);
+    if (n < 0) return NaN;
+    if (n === 0 || n === 1) return 1;
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+
+  function toRad(x) { return isDeg ? x * Math.PI / 180 : x; }
+
+  function evaluate(e) {
+    e = e
+      .replace(/×/g, '*')
+      .replace(/÷/g, '/')
+      .replace(/−/g, '-')
+      .replace(/π/g, Math.PI)
+      .replace(/\be\b/g, Math.E);
+
+    e = e.replace(/sin\(([^)]+)\)/g, (_, x) => Math.sin(toRad(eval(x))));
+    e = e.replace(/cos\(([^)]+)\)/g, (_, x) => Math.cos(toRad(eval(x))));
+    e = e.replace(/tan\(([^)]+)\)/g, (_, x) => Math.tan(toRad(eval(x))));
+    e = e.replace(/ln\(([^)]+)\)/g,  (_, x) => Math.log(eval(x)));
+    e = e.replace(/log\(([^)]+)\)/g, (_, x) => Math.log10(eval(x)));
+    e = e.replace(/√\(([^)]+)\)/g,   (_, x) => Math.sqrt(eval(x)));
+    e = e.replace(/(\d+(?:\.\d+)?)!/g, (_, x) => factorial(Number(x)));
+    e = e.replace(/\^/g, '**');
+
+    return Function('"use strict"; return (' + e + ')')();
+  }
+
+  function render() {
+    const el = document.getElementById('display');
+    const text = display.length > 12 ? parseFloat(display).toExponential(5) : display;
+    el.textContent = text;
+    el.className = 'display-main' + (display === 'Error' ? ' error' : text.length > 10 ? ' small' : '');
+    document.getElementById('history').textContent = history;
+    document.getElementById('expr-bar').textContent = expr;
+  }
+
+  function setMode(m) {
+    isDeg = m === 'deg';
+    document.getElementById('btn-deg').classList.toggle('active', isDeg);
+    document.getElementById('btn-rad').classList.toggle('active', !isDeg);
+  }
+
+  function pressNum(d) {
+    if (justEvaled) { display = d; justEvaled = false; render(); return; }
+    display = display === '0' ? d : display + d;
+    render();
+  }
+
+  function pressDot() {
+    if (justEvaled) { display = '0.'; justEvaled = false; render(); return; }
+    if (!display.includes('.')) display += '.';
+    render();
+  }
+
+  function pressOp(op) {
+    expr += display + op;
+    display = '0';
+    justEvaled = false;
+    render();
+  }
+
+  function pressFn(fn) {
+    if (fn === 'x!') {
+      const result = factorial(Number(display));
+      history = display + '! =';
+      display = String(result);
+      expr = '';
+      justEvaled = true;
+      render();
+      return;
+    }
+    if (fn === 'x²') {
+      expr += display + '^2';
+      display = '0';
+      justEvaled = false;
+      render();
+      return;
+    }
+    if (fn === 'xʸ') {
+      expr += display + '^';
+      display = '0';
+      justEvaled = false;
+      render();
+      return;
+    }
+    // trig/log/sqrt — open paren
+    expr += fn + '(';
+    display = '0';
+    justEvaled = false;
+    render();
+  }
+
+  function pressBracket(b) {
+    if (b === '(') {
+      expr += display === '0' ? '(' : display + '(';
+      display = '0';
+    } else {
+      expr += display + ')';
+      display = '0';
+    }
+    justEvaled = false;
+    render();
+  }
+
+  function pressConst(c) {
+    display = c === 'π' ? String(Math.PI) : String(Math.E);
+    justEvaled = false;
+    render();
+  }
+
+  function pressAC() {
+    display = '0'; expr = ''; history = ''; justEvaled = false;
+    render();
+  }
+
+  function pressSign() {
+    display = display.startsWith('-') ? display.slice(1) : '-' + display;
+    render();
+  }
+
+  function pressPercent() {
+    display = String(parseFloat(display) / 100);
+    render();
+  }
+
+  function pressEquals() {
+    try {
+      let full = expr + display;
+      const opens  = (full.match(/\(/g) || []).length;
+      const closes = (full.match(/\)/g) || []).length;
+      full += ')'.repeat(Math.max(0, opens - closes));
+      const result = evaluate(full);
+      const nice = parseFloat(result.toFixed(10)).toString();
+      history = full + ' =';
+      display = nice;
+      expr = '';
+      justEvaled = true;
+    } catch {
+      display = 'Error';
+      expr = '';
+      justEvaled = true;
+    }
+    render();
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') pressNum(e.key);
+    else if (e.key === '.') pressDot();
+    else if (e.key === '+') pressOp('+');
+    else if (e.key === '-') pressOp('−');
+    else if (e.key === '*') pressOp('×');
+    else if (e.key === '/') { e.preventDefault(); pressOp('÷'); }
+    else if (e.key === 'Enter' || e.key === '=') pressEquals();
+    else if (e.key === 'Backspace') {
+      if (display.length > 1) display = display.slice(0, -1);
+      else display = '0';
+      render();
+    }
+    else if (e.key === 'Escape') pressAC();
+  });
+
+  render();
+</script>
+</body>
+</html>
